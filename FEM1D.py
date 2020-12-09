@@ -2,7 +2,10 @@
 import numpy as np
 import numexpr as ne
 import math
-import scipy
+from scipy.linalg import inv
+import matplotlib.pyplot as plt
+
+np.set_printoptions(precision=3)
 
 # Intialize and Preallocate
 Ne = 10   # Number of Elements
@@ -29,8 +32,9 @@ dphi_2 = 1/2
 dphi = np.array([-1/2, 1/2])
 f_quad = np.array(ne.evaluate(f, local_dict = {'t':0, 'x': g_p}, global_dict=global_expr))
 phi_1_quad = np.array(ne.evaluate(phi_1, local_dict={'xi': g_p}))
-phi_2_quad = np.array(ne.evaluate(phi_1, local_dict={'xi': g_p}))
+phi_2_quad = np.array(ne.evaluate(phi_2, local_dict={'xi': g_p}))
 phi_quad = np.vstack((phi_1_quad, phi_2_quad))
+
 
 # mesh
 x = np.linspace(0,1,N)
@@ -39,7 +43,7 @@ dbc = np.array(([0, 0], [N-1,0]))
 
 # time discretization
 dt = 1/551
-t = np.arange(0,1,dt)
+time = np.arange(0,1,dt)
 
 # connectivity
 map_lg = np.arange(Ne)   
@@ -50,45 +54,66 @@ map_lg = np.vstack((map_lg, map_lg+1)).T
 # Start Method
 for k in range(Ne):      # loop through elements
     for l in range(2):   # loop over nodes on element k
-        f_local[l] = h[k]/2*np.sum(np.dot(np.dot(f_quad, phi_quad[l,:]), g_w))
+        # f_local[l] = h[k]/2*np.sum(np.dot(np.dot(f_quad, phi_quad[l,:]), g_w))
         for m in range(2):   # mass and stiffness
             m_local[l][m] = h[k]/2*np.sum(np.dot(np.dot(phi_quad[l,:], phi_quad[m,:]), g_w))
-            k_local[l][m] = 2/h[k]*dphi[l]*dphi[m]
+            k_local[l][m] = 2/h[k]*dphi[l]*dphi[m]*2
     
     # Sum local terms
     for l in range(2):
         global_node = map_lg[k][l]
-        F[global_node] += f_local[l]
+        # F[global_node] += f_local[l]
         for m in range(2):
             global_node2 = map_lg[k][m]
             M[global_node][global_node2] += m_local[l][m]
             K[global_node][global_node2] += k_local[l][m]
 
-print(F)
-print(M)
-np.savetxt('out.txt', K, delimiter=" ")
-
 # Boundary Conditions
 for i in range(N):
-    if(i in dbc[0,:]): 
+    if(i in dbc[:,0]):
+        idx = np.where(dbc[:,0]==i) 
         for j in range(N):
             if(j != i):
-                F[j] -= K[j,i]*dbc[i,1]
+                F[j] -= K[j,i]*dbc[idx,1]-2/dt*M[j,i]*dbc[idx,1] #TODO: Not sure if this is right         
+                M[j,i] = 0
+                M[i,j] = 0
                 K[j,i] = 0
                 K[i,j] = 0
              
-            F[i] =  dbc[i,1]   # assign dirichlet val
+            F[i] =  dbc[idx,1]   # assign dirichlet val
+            M[i,i] = 1
             K[i,i] = 1
 
-print(F)
-np.savetxt('out.txt', K, fmt="%4.2f", delimiter=" ")
+np.savetxt('out.txt', M, fmt='%4.2f', delimiter=' ')
 
-# Solve Ku=f
-# u = linsolve(K,F)
+# Invert Matrices
+M_inv = inv(M)
+M_inv_K = M_inv@K
 
-def integ_f(f_exp, g_x, g_w, h):
-    x = g_x
-    F = np.array(ne.evaluate(f_exp))
-    prod = np.dot(F, )
-    F = h/2*np.dot(g_w, F)
-    return F
+# Solve in time
+u = np.zeros(N)
+
+for t in time:
+    # Find F vector
+    F = np.zeros(N)
+
+    # Midpoint rule TODO: how to do Gaussian Quadrature?
+    x_m = x[0:-1]+h/2
+    f_m = np.array(ne.evaluate(f, local_dict = {'t':t, 'x': x_m}, global_dict=global_expr))
+    for k in range(Ne):
+        for l in range(2):  
+            f_local = h[k]*f_m[k]*1/2
+            global_node = map_lg[k][l]
+            F[global_node] += f_local
+
+    a = dt*M_inv_K@u
+    b = dt*M_inv@F
+    u_new = u - a + b
+    u = u_new
+
+fig, ax = plt.subplots()
+ax.plot(x, u)
+ax.set_xlabel('x')
+ax.set_ylabel('u')
+ax.set_title('Solution at t=1')
+plt.show()
