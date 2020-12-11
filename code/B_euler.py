@@ -108,12 +108,11 @@ u_real = ne.evaluate('e**-t*sin(pi*x)', local_dict = {'x': x_real, 't': 1}, glob
 
 fig, ax = plt.subplots(nrows = 1, ncols = 1)
 ax.plot(x_real, u_real, 'r', label = 'real')
-ax.plot(x, u, 'b', label = 'calculated')
+ax.plot(x, u, 'b', label = 'B. Euler')
 ax.grid(True)
 ax.set_xlabel('x')
 ax.set_ylabel('u')
-ax.set_title('Comparing Solutions')
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles, labels)
+ax.set_title('Comparing Solutions\n Timestep = %5.4f sec' % dt)
+ax.legend()
 
 plt.show()

@@ -11,7 +11,7 @@ Ne = 10   # Number of Elements
 N = Ne+1  # Number of Nodes
 
 f = '(pi**2-1)*e**(-t)*sin(pi*x)' # RHS of eqn
-u_guess = 'cos(pi*x)'             # Initial guess
+u_guess = 'sin(pi*x)'             # Initial guess
 
 # Mesh
 x = np.linspace(0,1,N)
@@ -19,7 +19,7 @@ h = np.diff(x)
 dbc = np.array(([0, 0], [N-1,0])) # [node, value]
 
 # Time discretization
-dt = 1/560
+dt = 1/570
 time = np.arange(0,1+dt,dt)
 
 # Connectivity
@@ -68,9 +68,9 @@ M_inv_copy = M_inv.copy()
 for i in range(N):
     if(i in dbc[:,0]):
         M[i,:] = np.zeros(N)
-        M[:,i] = np.zeros(N)
+        # M[:,i] = np.zeros(N)  #TODO Don't think these should be here
         K[i,:] = np.zeros(N)
-        K[:,i] = np.zeros(N)
+        # K[:,i] = np.zeros(N)  #TODO Don't think these should be here
 
         M_inv[i,:] = np.zeros(N)
         M_inv[:,i] = np.zeros(N)
@@ -109,13 +109,12 @@ x_real = np.linspace(0,1,100)
 u_real = ne.evaluate('e**-t*sin(pi*x)', local_dict = {'x': x_real, 't': 1}, global_dict=global_expr)
 
 fig, ax = plt.subplots(nrows = 1, ncols = 1)
-ax.plot(x_real, u_real, 'r', label = 'real')
+ax.plot(x_real, u_real, 'r', label = 'F. Euler')
 ax.plot(x, u, 'b', label = 'calculated')
 ax.grid(True)
 ax.set_xlabel('x')
 ax.set_ylabel('u')
-ax.set_title('Comparing Solutions')
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles, labels)
+ax.set_title('Comparing Solutions\n Timestep = %5.4f sec' % dt)
+ax.legend() 
 
 plt.show()
