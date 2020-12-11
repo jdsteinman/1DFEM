@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 np.set_printoptions(precision=3)
 
 # Inputs
-Ne = 10   # Number of Elements
+Ne = 11   # Number of Elements
 N = Ne+1  # Number of Nodes
 
 f = '(pi**2-1)*e**(-t)*sin(pi*x)' # RHS of eqn
@@ -19,7 +19,7 @@ h = np.diff(x)
 dbc = np.array(([0, 0], [N-1,0])) # [node, value]
 
 # Time discretization
-dt = 1/570
+dt = 1/560
 time = np.arange(0,1+dt,dt)
 
 # Connectivity
@@ -104,6 +104,8 @@ for t in time:
     u_new = M_inv@( (M-dt*K)@u + dt*F)
     u = u_new
 
+print(u)
+
 # Plotting
 x_real = np.linspace(0,1,100)
 u_real = ne.evaluate('e**-t*sin(pi*x)', local_dict = {'x': x_real, 't': 1}, global_dict=global_expr)
@@ -114,7 +116,9 @@ ax.plot(x, u, 'b', label = 'calculated')
 ax.grid(True)
 ax.set_xlabel('x')
 ax.set_ylabel('u')
-ax.set_title('Comparing Solutions\n Timestep = %5.4f sec' % dt)
+ax.set_title('Comparing Solutions\n # Elements = %d' % Ne)
 ax.legend() 
+
+# print(u[Ne/2] - u_real[50] )
 
 plt.show()

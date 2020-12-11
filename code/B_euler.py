@@ -18,7 +18,7 @@ h = np.diff(x)
 dbc = np.array(([0, 0], [N-1,0])) # [node, value]
 
 # Time discretization
-dt = 1/1000
+dt = 1/560
 time = np.arange(0,1+dt,dt)
 
 # Connectivity
@@ -114,5 +114,7 @@ ax.set_xlabel('x')
 ax.set_ylabel('u')
 ax.set_title('Comparing Solutions\n Timestep = %5.4f sec' % dt)
 ax.legend()
+
+print(u[5] - u_real[50] ) 
 
 plt.show()
